@@ -5,7 +5,7 @@ registerSketch('sk2', function(p) {
   };
 
   p.draw = function() {
-    p.background('#f4f1ea'); 
+    p.background('#ffffff'); 
     p.translate(p.width / 2, p.height / 2);
 
     let hr = p.hour();
