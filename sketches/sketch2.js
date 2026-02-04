@@ -51,28 +51,39 @@ registerSketch('sk2', function(p) {
 
   function drawMealZones(p) {
     p.noFill();
-    p.strokeWeight(10);
-    // Breakfast: 7am-9am (Yellow)
-    p.stroke('rgba(255, 204, 0, 0.3)');
-    p.arc(0, 0, 320, 320, 7*15-90, 9*15-90);
+    p.strokeWeight(15);
+    
+    // Breakfast: 8am-10am (Yellow)
+    // 8 * 15 = 120°, 10 * 15 = 150°
+    p.stroke('rgba(255, 204, 0, 0.4)');
+    p.arc(0, 0, 310, 310, 8*15-90, 10*15-90);
+    
     // Lunch: 12pm-2pm (Orange)
-    p.stroke('rgba(255, 102, 0, 0.3)');
-    p.arc(0, 0, 320, 320, 12*15-90, 14*15-90);
-    // Dinner: 6pm-8pm (Purple)
-    p.stroke('rgba(102, 51, 153, 0.3)');
-    p.arc(0, 0, 320, 320, 18*15-90, 20*15-90);
+    // 12 * 15 = 180°, 14 * 15 = 210°
+    p.stroke('rgba(255, 102, 0, 0.4)');
+    p.arc(0, 0, 310, 310, 12*15-90, 14*15-90);
+    
+    // Dinner: 5pm-7pm (Purple)
+    // 17 * 15 = 255°, 19 * 15 = 285°
+    p.stroke('rgba(102, 51, 153, 0.4)');
+    p.arc(0, 0, 310, 310, 17*15-90, 19*15-90);
   }
 
   function drawFood(p, hr) {
     p.noStroke();
-    if (hr >= 7 && hr < 9) { // Breakfast: Eggs
-       p.fill(255); p.circle(60, -40, 40);
-       p.fill(255, 204, 0); p.circle(60, -40, 20);
-    } else if (hr >= 12 && hr < 14) { // Lunch: Peas
+    // Breakfast: 8am to 10am
+    if (hr >= 8 && hr < 10) { 
+       p.fill(255); p.circle(60, -40, 40); // Egg white
+       p.fill(255, 204, 0); p.circle(60, -40, 20); // Yolk
+    } 
+    // Lunch: 12pm to 2pm
+    else if (hr >= 12 && hr < 14) { 
        p.fill('#8dc63f');
-       for(let i=0; i<10; i++) p.circle(50 + p.cos(i*36)*15, 50 + p.sin(i*36)*15, 10);
-    } else if (hr >= 18 && hr < 20) { // Dinner: Steak (shape)
-       p.fill(101, 67, 33);
+       for(let i=0; i<12; i++) p.circle(50 + p.cos(i*30)*18, 50 + p.sin(i*30)*18, 10);
+    } 
+    // Dinner: 5pm to 7pm (17:00 to 19:00)
+    else if (hr >= 17 && hr < 19) { 
+       p.fill(101, 67, 33); // Steak color
        p.beginShape();
        p.vertex(-80, 20); p.vertex(-20, 20); p.vertex(-30, 70); p.vertex(-90, 60);
        p.endShape(p.CLOSE);
