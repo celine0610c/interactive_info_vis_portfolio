@@ -47,29 +47,59 @@ registerSketch('sk4', function(p) {
     p.endShape(p.CLOSE);
 
     // --- DRAW UNPOPPED KERNELS (MINUTES) ---
-    // Minutes = Number of kernels at the bottom
+    // LOGIC: "Circle Packing" to prevent overlap
+    
     p.randomSeed(100); 
     p.fill('#FFD700'); // Gold
     p.noStroke();
     
+    let placedKernels = []; // Array to store positions of kernels we've already placed
+    let kernelSize = 14;    // Approximate width of a kernel
+    let minDistance = 16;   // Minimum distance between kernel centers (size + padding)
+    
     for (let i = 0; i < mn; i++) {
-      let kx = p.random(-140, 140);
-      let ky = p.random(50, 130);
+      let kx, ky;
+      let validSpot = false;
+      let attempts = 0;
       
-      // Jitter Animation based on seconds (Heat)
+      // Try to find a non-overlapping spot up to 50 times per kernel
+      while (!validSpot && attempts < 50) {
+        // Pick a random spot in the bottom of the pot
+        kx = p.random(-130, 130);
+        ky = p.random(60, 130);
+        
+        // Assume it's valid until proven otherwise
+        validSpot = true;
+        
+        // Check against all previously placed kernels
+        for (let other of placedKernels) {
+          let d = p.dist(kx, ky, other.x, other.y);
+          if (d < minDistance) {
+            validSpot = false; // Too close!
+            break; // Stop checking others, this spot is bad
+          }
+        }
+        attempts++;
+      }
+      
+      // If we found a valid spot (or ran out of attempts and just have to place it), save it
+      placedKernels.push({x: kx, y: ky});
+
+      // Calculate Jitter (Heat vibration)
       let jitterAmount = p.map(sc, 0, 59, 0.5, 3); 
       let dx = p.random(-jitterAmount, jitterAmount);
       let dy = p.random(-jitterAmount, jitterAmount);
       
+      // Draw the kernel
       p.push();
       p.translate(kx + dx, ky + dy);
       p.rotate(p.random(360));
-      p.ellipse(0, 0, 12, 16); // Kernel shape
+      p.ellipse(0, 0, 12, 16); 
       p.pop();
     }
 
     // --- DRAW POPPED CORN (HOURS) ---
-    // Hours = Number of popcorn clouds at the top
+    // Overlapping is okay here because they are clouds!
     p.randomSeed(200); 
     p.fill(255); 
     p.noStroke();
@@ -78,19 +108,16 @@ registerSketch('sk4', function(p) {
       let px = p.random(-130, 130);
       let py = p.random(-80, 20);
       
-      // Gentle float animation
       let floatY = p.sin(p.frameCount * 2 + i * 50) * 3;
       
       p.push();
       p.translate(px, py + floatY);
       
-      // Draw Popcorn Cloud
       p.circle(0, 0, 30);
       p.circle(-10, -10, 25);
       p.circle(10, -10, 25);
       p.circle(0, -15, 25);
       
-      // Yellow center
       p.fill('#FFD700');
       p.circle(0, 5, 8);
       p.fill(255);
