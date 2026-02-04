@@ -1,6 +1,6 @@
-registerSketch('sk2', function(p) {
+registerSketch('sk2', function(p) { 
   p.setup = function() {
-    // Matches the container in your index.html
+    // This looks for the div you just showed me
     let container = p.select('#sketch-container-sk2');
     p.createCanvas(p.windowWidth, p.windowHeight);
     p.angleMode(p.DEGREES);
