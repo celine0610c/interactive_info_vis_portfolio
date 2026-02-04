@@ -8,7 +8,6 @@ registerSketch('sk2', function(p) {
     p.background('#f4f1ea'); 
     p.translate(p.width / 2, p.height / 2);
 
-    // Get current system time
     let hr = p.hour();
     let mn = p.minute();
     let sc = p.second();
@@ -20,17 +19,17 @@ registerSketch('sk2', function(p) {
     p.circle(0, 0, 350); // Outer rim
     p.circle(0, 0, 280); // Inner rim
 
-    // 2. Draw Hour Marks (Tick marks)
+    // 2. Draw Hour Marks (This is the loop for the markings)
     p.stroke(180);
     p.strokeWeight(4);
     for (let i = 0; i < 12; i++) {
       p.push();
-      p.rotate(i * 30); // 30 degrees for each hour
-      p.line(115, 0, 135, 0); 
+      p.rotate(i * 30); // 360 degrees / 12 hours = 30 degrees
+      p.line(110, 0, 135, 0); 
       p.pop();
     }
 
-    // 3. Calculate Angles (-90 to start at 12 o'clock)
+    // 3. Calculate Angles
     let hourAngle = p.map(hr % 12, 0, 12, 0, 360) - 90;
     let minuteAngle = p.map(mn, 0, 60, 0, 360) - 90;
     let secondAngle = p.map(sc, 0, 60, 0, 360) - 90;
@@ -60,7 +59,7 @@ registerSketch('sk2', function(p) {
   };
 
   // --- UTENSIL DRAWING HELPERS ---
-  // These MUST be inside the registerSketch function!
+  // These must be inside the registerSketch block to be recognized
 
   function drawFork(p, len) {
     p.stroke(160); 
@@ -70,7 +69,7 @@ registerSketch('sk2', function(p) {
     for(let i = -5; i <= 5; i += 5) {
        p.line(len * 0.7, i, len, i); // Prongs
     }
-    p.line(len * 0.7, -5, len * 0.7, 5); // Base
+    p.line(len * 0.7, -5, len * 0.7, 5);
   }
 
   function drawSpoon(p, len) {
@@ -88,11 +87,10 @@ registerSketch('sk2', function(p) {
     p.line(0, 0, len * 0.7, 0); // Handle
     p.fill(240);
     p.strokeWeight(1);
-    p.ellipse(len * 0.85, 0, 30, 22); // Spoon part
-    // Tiny prongs
+    p.ellipse(len * 0.85, 0, 30, 22); // Head
     p.stroke('#d9534f');
     for(let i = -4; i <= 4; i += 4) {
-      p.line(len * 0.95, i, len * 1.05, i);
+      p.line(len * 0.95, i, len * 1.05, i); // Spork prongs
     }
   }
 
