@@ -19,50 +19,44 @@ registerSketch('sk2', function(p) {
     p.circle(0, 0, 350); // Outer rim
     p.circle(0, 0, 280); // Inner rim
 
-    // 2. Draw Time Marks (Ticks)
-    drawMarks(p);
+    // 2. Draw Hour Marks
+    p.stroke(180);
+    p.strokeWeight(4);
+    for (let i = 0; i < 12; i++) {
+      p.push();
+      p.rotate(i * 30); // 360 / 12 = 30 degrees per hour
+      p.line(120, 0, 140, 0); 
+      p.pop();
+    }
 
-    // 3. Calculate Angles
+    // 3. Calculate Angles (-90 to start at 12 o'clock)
     let hourAngle = p.map(hr % 12, 0, 12, 0, 360) - 90;
     let minuteAngle = p.map(mn, 0, 60, 0, 360) - 90;
     let secondAngle = p.map(sc, 0, 60, 0, 360) - 90;
 
-    // 4. Hour Hand: The Fork
+    // 4. Hour Hand (Fork)
     p.push();
     p.rotate(hourAngle);
     drawFork(p, 100);
     p.pop();
 
-    // 5. Minute Hand: The Spoon
+    // 5. Minute Hand (Spoon)
     p.push();
     p.rotate(minuteAngle);
     drawSpoon(p, 135);
     p.pop();
 
-    // 6. Second Hand: The Spork
+    // 6. Second Hand (Spork)
     p.push();
     p.rotate(secondAngle);
     drawSpork(p, 150);
     p.pop();
     
-    // Center pivot
+    // Center point
     p.fill(150);
     p.noStroke();
     p.circle(0, 0, 12);
   };
-
-  function drawMarks(p) {
-    p.stroke(180);
-    p.strokeWeight(4);
-    for (let i = 0; i < 12; i++) {
-      let angle = i * 30; // 360 degrees / 12 hours = 30 degrees
-      p.push();
-      p.rotate(angle);
-      // Draw a small line at the edge of the inner circle
-      p.line(120, 0, 140, 0); 
-      p.pop();
-    }
-  }
 
   function drawFork(p, len) {
     p.stroke(180); p.strokeWeight(6);
