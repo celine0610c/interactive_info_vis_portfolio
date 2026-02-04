@@ -14,83 +14,112 @@ registerSketch('sk4', function(p) {
     let mn = p.minute();
     let sc = p.second();
 
-    // --- DRAW THE POT ---
-    // Pot Handle
-    p.fill(100);
-    p.rect(150, -140, 200, 30, 10);
+    // --- DRAW THE FANCY POT ---
     
-    // Pot Body
-    p.fill(200); 
-    p.stroke(150);
-    p.strokeWeight(5);
+    // 1. Drop Shadow (Grounds the object)
+    p.fill(0, 100); // Semi-transparent black
+    p.ellipse(0, 170, 360, 30);
+
+    // 2. Handle (Back part / Connector)
+    p.fill(160); // Metal connector
+    p.rect(170, -115, 40, 20, 5);
+    
+    // 3. The Main Handle (Black Grip)
+    p.fill(40); 
+    p.stroke(20);
+    p.strokeWeight(2);
+    // Draw a long rounded handle
+    p.beginShape();
+    p.vertex(200, -120);
+    p.vertex(380, -120);
+    p.vertex(380, -90);
+    p.vertex(200, -100);
+    p.endShape(p.CLOSE);
+    // Rivets (Bolts)
+    p.fill(200);
+    p.noStroke();
+    p.circle(215, -110, 8);
+    p.circle(235, -108, 8);
+
+    // 4. Pot Body (Stainless Steel Look)
+    p.fill(220); // Base silver
+    p.stroke(180);
+    p.strokeWeight(2);
+    
     p.beginShape();
     p.vertex(-180, -100);
     p.vertex(180, -100);
-    p.vertex(170, 150);
+    p.vertex(170, 150); // Taper slightly
     p.curveVertex(170, 150);
-    p.curveVertex(0, 170);
+    p.curveVertex(0, 165); // Rounded bottom
     p.curveVertex(-170, 150);
     p.vertex(-170, 150);
     p.endShape(p.CLOSE);
 
-    // Pot Interior
-    p.fill(50);
+    // 5. Metallic Highlight (The "Shine")
+    p.fill(255, 120); // Transparent white
     p.noStroke();
     p.beginShape();
-    p.vertex(-170, -95);
-    p.vertex(170, -95);
-    p.vertex(160, 145);
-    p.curveVertex(160, 145);
-    p.curveVertex(0, 160);
-    p.curveVertex(-160, 145);
-    p.vertex(-160, 145);
+    p.vertex(-140, -95);
+    p.vertex(-100, -95);
+    p.vertex(-110, 150);
+    p.vertex(-145, 145);
     p.endShape(p.CLOSE);
 
+    // 6. Pot Interior (Dark Void)
+    p.fill(40); // Dark grey inside
+    p.stroke(180); // Rim color
+    p.strokeWeight(4);
+    
+    // Draw the opening (Ellipse at the top)
+    p.beginShape();
+    // We draw the shape to match the pot width
+    p.vertex(-180, -100);
+    p.bezierVertex(-180, -60, 180, -60, 180, -100); // Front curve
+    p.bezierVertex(180, -140, -180, -140, -180, -100); // Back curve
+    p.endShape(p.CLOSE);
+    
+    // Masking Rect to hide top half of rim (optional, but keeps it clean)
+    // Actually, drawing the inside "Darkness" slightly lower helps depth:
+    p.fill(30);
+    p.noStroke();
+    p.ellipse(0, -100, 350, 60); 
+
+
     // --- DRAW UNPOPPED KERNELS (MINUTES) ---
-    // LOGIC: "Circle Packing" to prevent overlap
+    // (Circle Packing Logic)
     
     p.randomSeed(100); 
-    p.fill('#FFD700'); // Gold
+    p.fill('#FFD700'); 
     p.noStroke();
     
-    let placedKernels = []; // Array to store positions of kernels we've already placed
-    let kernelSize = 14;    // Approximate width of a kernel
-    let minDistance = 16;   // Minimum distance between kernel centers (size + padding)
+    let placedKernels = []; 
+    let minDistance = 16;   
     
     for (let i = 0; i < mn; i++) {
       let kx, ky;
       let validSpot = false;
       let attempts = 0;
       
-      // Try to find a non-overlapping spot up to 50 times per kernel
       while (!validSpot && attempts < 50) {
-        // Pick a random spot in the bottom of the pot
+        // Area limits adjusted for new pot shape
         kx = p.random(-130, 130);
-        ky = p.random(60, 130);
-        
-        // Assume it's valid until proven otherwise
+        ky = p.random(60, 120); 
         validSpot = true;
-        
-        // Check against all previously placed kernels
         for (let other of placedKernels) {
           let d = p.dist(kx, ky, other.x, other.y);
-          if (d < minDistance) {
-            validSpot = false; // Too close!
-            break; // Stop checking others, this spot is bad
-          }
+          if (d < minDistance) { validSpot = false; break; }
         }
         attempts++;
       }
       
-      // If we found a valid spot (or ran out of attempts and just have to place it), save it
       placedKernels.push({x: kx, y: ky});
 
-      // Calculate Jitter (Heat vibration)
-      let jitterAmount = p.map(sc, 0, 59, 0.5, 3); 
+      // Jitter (Heat)
+      let jitterAmount = p.map(sc, 0, 59, 0.5, 3.5); 
       let dx = p.random(-jitterAmount, jitterAmount);
       let dy = p.random(-jitterAmount, jitterAmount);
       
-      // Draw the kernel
       p.push();
       p.translate(kx + dx, ky + dy);
       p.rotate(p.random(360));
@@ -99,20 +128,25 @@ registerSketch('sk4', function(p) {
     }
 
     // --- DRAW POPPED CORN (HOURS) ---
-    // Overlapping is okay here because they are clouds!
     p.randomSeed(200); 
-    p.fill(255); 
+    p.fill(250); 
     p.noStroke();
 
     for (let i = 0; i < hr; i++) {
-      let px = p.random(-130, 130);
-      let py = p.random(-80, 20);
+      let px = p.random(-120, 120);
+      let py = p.random(-110, -10); // Floating above the rim
       
-      let floatY = p.sin(p.frameCount * 2 + i * 50) * 3;
+      let floatY = p.sin(p.frameCount * 2 + i * 50) * 4;
       
       p.push();
       p.translate(px, py + floatY);
       
+      // Shadow on popcorn for 3D feel
+      p.fill(200); 
+      p.circle(2, 2, 30); 
+      
+      // Main Puff
+      p.fill(255);
       p.circle(0, 0, 30);
       p.circle(-10, -10, 25);
       p.circle(10, -10, 25);
@@ -120,7 +154,6 @@ registerSketch('sk4', function(p) {
       
       p.fill('#FFD700');
       p.circle(0, 5, 8);
-      p.fill(255);
       
       p.pop();
     }
