@@ -14,7 +14,6 @@ registerSketch('sk3', function(p) {
     let sc = p.second();
 
     // --- 1. FLY COUNT (Hours) ---
-    // 1 fly per hour (1-12)
     let flyCount = hr % 12;
     if (flyCount === 0) flyCount = 12;
 
@@ -35,7 +34,7 @@ registerSketch('sk3', function(p) {
 
     // B. Draw Cheese Body
     p.push();
-    p.rotate(-90); // 0 degrees at top
+    p.rotate(-90);
 
     // Layer 1: Fresh Cheese Base
     p.fill(freshColor);
@@ -58,7 +57,6 @@ registerSketch('sk3', function(p) {
       let hx = p.cos(hAngle) * hDist;
       let hy = p.sin(hAngle) * hDist;
 
-      // Color logic
       let isMoldy = (hAngle < moldDegrees);
       let baseColor = isMoldy ? moldColor : freshColor;
       
@@ -72,47 +70,72 @@ registerSketch('sk3', function(p) {
     p.pop(); 
 
 
-    // --- DRAW IDLE FLIES ---
-    p.fill(0);
+    // --- DRAW LANDED FLIES ---
     p.noStroke();
 
     for (let i = 0; i < flyCount; i++) {
-      // 1. Assign a fixed "Home" Angle for each fly
-      // This distributes them evenly around the clock
-      let baseAngle = (i * 360) / flyCount - 90; 
+      // 1. Position: Evenly distributed ON THE RIND
+      // Using 'i' to space them out like numbers on a clock
+      let angleSpacing = 360 / flyCount;
+      let baseAngle = (i * angleSpacing) - 90; 
+      
+      // 2. Crawl Effect (Noise)
+      // Very slow, subtle movement along the angle
+      let crawlSpeed = p.frameCount * 0.005 + (i * 10);
+      let angleWiggle = p.map(p.noise(crawlSpeed), 0, 1, -5, 5);
+      
+      // Calculate final position
+      let finalAngle = baseAngle + angleWiggle;
+      // Position them right in the middle of the rind thickness
+      let dist = radius + (rindThickness / 2); 
 
-      // 2. Calculate Drift (Slow Movement)
-      // We use noise to make them gently float around their home angle
-      let t = p.frameCount * 0.02 + (i * 100);
-      let driftAngle = p.map(p.noise(t), 0, 1, -15, 15); // +/- 15 degrees
-      let driftDist  = p.map(p.noise(t + 50), 0, 1, -10, 10); // In and out breathing
-
-      // 3. Calculate Buzz (Fast Jitter)
-      let buzzX = p.random(-2, 2);
-      let buzzY = p.random(-2, 2);
-
-      // Combine positions
-      let finalAngle = baseAngle + driftAngle;
-      let finalDist = (radius + 40) + driftDist; // Hover slightly outside rind
-
-      let fx = p.cos(finalAngle) * finalDist + buzzX;
-      let fy = p.sin(finalAngle) * finalDist + buzzY;
+      let fx = p.cos(finalAngle) * dist;
+      let fy = p.sin(finalAngle) * dist;
 
       p.push();
       p.translate(fx, fy);
       
-      // Rotate fly to face the center (plus some jitter)
-      let facingAngle = finalAngle + 90 + p.random(-10, 10);
-      p.rotate(facingAngle);
-
-      // Fly Body
-      p.fill(30);
-      p.ellipse(0, 0, 10, 14);
+      // 3. Rotation (Twitching)
+      // Flies tend to rotate abruptly to look around
+      let twitchNoise = p.noise(p.frameCount * 0.05 + i * 50);
+      let facingAngle;
       
-      // Fly Wings
-      p.fill(255, 100);
-      p.ellipse(-6, 2, 8, 5);
-      p.ellipse(6, 2, 8, 5);
+      if (twitchNoise < 0.3) facingAngle = finalAngle;      // Face tangent (walking along rim)
+      else if (twitchNoise < 0.6) facingAngle = finalAngle + 90; // Face outward
+      else facingAngle = finalAngle + 180;                  // Face inward (eating)
+      
+      // Add a little jitter to the rotation
+      p.rotate(facingAngle + p.random(-10, 10));
+
+      // 4. Draw Fly (Landed posture)
+      
+      // Legs (Small lines sticking out)
+      p.stroke(0);
+      p.strokeWeight(1);
+      p.line(-4, -4, 4, -4); // Front/Back legs roughly
+      p.line(-4, 0, 4, 0);
+      p.line(-4, 4, 4, 4);
+      p.noStroke();
+
+      // Body (Oval)
+      p.fill(20);
+      p.ellipse(0, 0, 12, 8); // Horizontal body relative to rotation
+      
+      // Head
+      p.fill(0);
+      p.circle(6, 0, 5); // Head at the "front"
+
+      // Wings (Folded back in V shape)
+      // White with low opacity
+      p.fill(255, 150);
+      p.push();
+      p.translate(-2, 0); // Attach wings to back of thorax
+      p.rotate(-20); // Wing 1 angled back
+      p.ellipse(-6, 0, 10, 4);
+      p.rotate(40);  // Wing 2 angled back other way
+      p.ellipse(-6, 0, 10, 4);
+      p.pop();
+
       p.pop();
     }
   };
