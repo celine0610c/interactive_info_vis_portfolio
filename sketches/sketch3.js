@@ -1,78 +1,113 @@
 registerSketch('sk3', function(p) {
   p.setup = function() {
     p.createCanvas(p.windowWidth, p.windowHeight);
+    p.angleMode(p.DEGREES); // Easier to work with circles
     p.noStroke();
   };
 
   p.draw = function() {
-    p.background(30); // Dark background to make the cheese pop
+    p.background(30); // Dark background
     p.translate(p.width / 2, p.height / 2);
 
     let hr = p.hour();
     let mn = p.minute();
     let sc = p.second();
 
-    // Convert 24h to 12h format (1-12)
-    let spotsCount = hr % 12;
-    if (spotsCount === 0) spotsCount = 12;
+    // --- TIME CALCS ---
+    // Slice Index: 0 to 11 (matches the 12 slices of the clock)
+    // 12:00-12:59 is index 0, 1:00-1:59 is index 1, etc.
+    let currentSliceIndex = hr % 12;
 
-    // Calculate mold alpha (opacity) based on minute
-    // 0 mins = faint (50), 59 mins = fully opaque (255)
-    let moldAlpha = p.map(mn, 0, 60, 40, 255);
+    // Fly Count: 1 to 12. If it's 0 (12:00), we usually show 12 flies on a clock face.
+    let flyCount = currentSliceIndex;
+    if (flyCount === 0) flyCount = 12;
 
-    // --- DRAW CHEESE WEDGE ---
-    // We'll draw a "3D-ish" wedge using simple shapes
+
+    // --- DRAW CHEESE WHEEL ---
+    let radius = p.min(p.width, p.height) * 0.35;
     
-    // 1. Top Face (Triangle)
-    p.fill('#FCD12A'); // Bright Cheddar Yellow
-    p.beginShape();
-    p.vertex(0, -100);   // Back Tip
-    p.vertex(150, 50);   // Front Right
-    p.vertex(-150, 50);  // Front Left
-    p.endShape(p.CLOSE);
-
-    // 2. Side Face (The "Crust" / Rind area)
-    p.fill('#E6B800'); // Slightly darker yellow/orange
-    p.beginShape();
-    p.vertex(-150, 50);
-    p.vertex(150, 50);
-    p.vertex(150, 150);
-    p.vertex(-150, 150);
-    p.endShape(p.CLOSE);
-
-    // 3. Cheese Holes (Decoration)
-    p.fill('#D4A000');
-    p.circle(-50, 20, 20);
-    p.circle(60, 80, 15);
-    p.circle(10, -30, 10);
-
-
-    // --- DRAW MOLD ---
+    // Colors
+    let freshColor = p.color('#FCD12A'); // Bright Cheddar
+    let moldColor  = p.color('#4C6F2F'); // Swamp Green
     
-    // IMPORTANT: We use randomSeed to ensure the spots stay in the 
-    // exact same place for every frame. We usually seed by a constant number.
-    p.randomSeed(9999); 
+    // Rotate so slice 0 is at the top (12 o'clock position)
+    p.push();
+    p.rotate(-90); 
 
-    for (let i = 0; i < spotsCount; i++) {
-      // Generate a random position on the front face of the cheese
-      // Face area is roughly x: -130 to 130, y: 60 to 140
-      let mx = p.random(-130, 130);
-      let my = p.random(60, 140);
+    for (let i = 0; i < 12; i++) {
+      let angleStart = i * 30;
+      let angleEnd = (i + 1) * 30;
+
+      // Determine Color Logic
+      if (i < currentSliceIndex) {
+        // PAST HOURS: Fully Moldy
+        p.fill(moldColor);
+      } 
+      else if (i === currentSliceIndex) {
+        // CURRENT HOUR: Gradient transition based on minute
+        // Map 0-60 mins to 0-1 lerp amount
+        let amt = p.map(mn, 0, 60, 0, 1);
+        let currentColor = p.lerpColor(freshColor, moldColor, amt);
+        p.fill(currentColor);
+      } 
+      else {
+        // FUTURE HOURS: Fresh Cheese
+        p.fill(freshColor);
+      }
+
+      // Draw the wedge
+      // We use arc(). arc(x, y, w, h, start, stop, mode)
+      p.arc(0, 0, radius * 2, radius * 2, angleStart, angleEnd, p.PIE);
+    }
+    p.pop(); // End cheese rotation
+
+
+    // --- DRAW FLIES ---
+    // Each fly represents 1 hour
+    
+    p.fill(0); // Black flies
+    
+    // We use a separate random seed so flies jitter but stay in their "area"
+    p.randomSeed(100); 
+
+    for (let i = 0; i < flyCount; i++) {
+      // Calculate a base position for the fly
+      // We distribute them evenly around the cheese or just swarm?
+      // Let's make them swarm the whole cheese loosely.
       
-      // Generate a random size for variation
-      let baseSize = p.random(15, 35);
+      // Create a unique time offset for each fly so they don't move in sync
+      let t = p.frameCount * 0.05 + i * 100;
       
-      // Pulse effect based on seconds (making it "breathe")
-      // We use the index 'i' so they don't all pulse in sync
-      let pulse = p.sin(p.frameCount * 0.05 + i) * 3; 
+      // Orbit logic:
+      // Base angle moves slowly, plus erratic noise
+      let flyAngle = (p.frameCount * 0.5) + (i * (360 / flyCount));
+      
+      // Radius: Hovering slightly outside the cheese edge
+      let flyDist = radius + 40 + p.noise(t) * 50; 
+      
+      // Convert polar to cartesian
+      let fx = p.cos(flyAngle) * flyDist;
+      let fy = p.sin(flyAngle) * flyDist;
+      
+      // Add "buzz" (high frequency jitter)
+      fx += p.random(-3, 3);
+      fy += p.random(-3, 3);
 
-      // Draw the main mold spot
-      p.fill(76, 111, 47, moldAlpha); // Swamp Green
-      p.circle(mx, my, baseSize + pulse);
-
-      // Draw a darker "core" for the mold
-      p.fill(40, 70, 30, moldAlpha);
-      p.circle(mx + p.random(-5, 5), my + p.random(-5, 5), (baseSize / 2) + pulse);
+      // Draw Fly (simple circle with tiny wings)
+      p.push();
+      p.translate(fx, fy);
+      // Rotate fly to face movement direction roughly (optional, just rotation jitter here)
+      p.rotate(p.random(360));
+      
+      // Body
+      p.fill(0);
+      p.ellipse(0, 0, 8, 12);
+      
+      // Wings (White-ish transparent)
+      p.fill(255, 150);
+      p.ellipse(-5, -2, 6, 4);
+      p.ellipse(5, -2, 6, 4);
+      p.pop();
     }
   };
 
