@@ -14,6 +14,52 @@ registerSketch('sk4', function(p) {
     let mn = p.minute();
     let sc = p.second();
 
+    // --- DRAW FIRE (Under the pot) ---
+    p.push();
+    p.translate(0, 150); // Move to bottom of pot
+    
+    // Enable additive blending for a glowing fire effect
+    p.blendMode(p.ADD); 
+    
+    // We create a flickering loop
+    // No strict particle system needed, just high-speed random drawing
+    p.randomSeed(p.frameCount); // Changes every frame = rapid flickering
+
+    for (let i = 0; i < 40; i++) {
+      // Random position spanning the width of the pot bottom (-160 to 160)
+      let fx = p.random(-150, 150);
+      let fy = p.random(-10, 60); // Depth of the flame below pot
+      
+      // Random size
+      let fSize = p.random(20, 60);
+
+      // Color based on position: 
+      // Center/Top is hot (Yellow/White), Sides/Bottom are cooler (Red/Orange)
+      // We also add a little blue at the very top (gas stove effect)
+      let fireColor;
+      
+      let distFromCenter = p.abs(fx);
+      
+      if (distFromCenter < 50 && fy < 10) {
+        // Core heat (Blueish/White)
+        fireColor = p.color(100, 200, 255, 150); 
+      } else if (distFromCenter < 100) {
+        // Middle heat (Yellow/Orange)
+        fireColor = p.color(255, p.random(100, 200), 0, 100);
+      } else {
+        // Edges (Red)
+        fireColor = p.color(255, 50, 0, 80);
+      }
+
+      p.fill(fireColor);
+      p.circle(fx, fy, fSize);
+    }
+    
+    // Turn off additive blend for the rest of the drawing
+    p.blendMode(p.BLEND);
+    p.pop();
+
+
     // --- DRAW THE SYMMETRICAL POT ---
     
     // 1. Pot Handle (Back part / Connector)
@@ -107,7 +153,8 @@ registerSketch('sk4', function(p) {
           placedKernels.push({x: kx, y: ky});
 
           // Jitter (Heat)
-          let jitterAmount = p.map(sc, 0, 59, 0.5, 4); 
+          // INCREASED JITTER now that there is fire!
+          let jitterAmount = p.map(sc, 0, 59, 1, 5); 
           let dx = p.random(-jitterAmount, jitterAmount);
           let dy = p.random(-jitterAmount, jitterAmount);
           
