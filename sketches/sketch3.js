@@ -19,15 +19,12 @@ registerSketch('sk3', function(p) {
     if (flyCount === 0) flyCount = 12;
 
     // --- 2. MOLD PROGRESS (Minutes) ---
-    // The cheese represents 1 hour (60 minutes).
-    // We map the current minute + second to 360 degrees.
     let moldDegrees = p.map(mn + sc/60, 0, 60, 0, 360);
 
     // --- DRAW CHEESE ---
     let radius = p.min(p.width, p.height) * 0.35;
     let rindThickness = 20;
 
-    // Colors
     let freshColor = p.color(252, 209, 42); // Bright Cheddar
     let moldColor  = p.color(76, 111, 47);  // Swamp Green
     let rindColor  = p.color(200, 140, 30); // Wax Rind
@@ -37,23 +34,20 @@ registerSketch('sk3', function(p) {
     p.circle(0, 0, (radius + rindThickness) * 2);
 
     // B. Draw Cheese Body
-    // We rotate -90 so 0 degrees is at the top (12 o'clock)
     p.push();
-    p.rotate(-90);
+    p.rotate(-90); // 0 degrees at top
 
-    // Layer 1: Fresh Cheese Base (Full Circle)
+    // Layer 1: Fresh Cheese Base
     p.fill(freshColor);
     p.circle(0, 0, radius * 2);
 
-    // Layer 2: Moldy Wedge (Arc)
-    // Draws over the fresh cheese based on minutes passed
+    // Layer 2: Moldy Wedge
     if (moldDegrees > 0) {
       p.fill(moldColor);
       p.arc(0, 0, radius * 2, radius * 2, 0, moldDegrees, p.PIE);
     }
 
     // Layer 3: Holes
-    // We use a constant randomSeed so holes stay in the same place
     p.randomSeed(12345); 
     let numHoles = 45;
 
@@ -61,60 +55,61 @@ registerSketch('sk3', function(p) {
       let hAngle = p.random(0, 360);
       let hDist = p.random(radius * 0.2, radius * 0.85);
       let hSize = p.random(10, 30);
-
-      // Determine Position
       let hx = p.cos(hAngle) * hDist;
       let hy = p.sin(hAngle) * hDist;
 
-      // Determine Color
-      // Since we are rotated -90, the angle 0 is at the top.
-      // We just check if the hole's angle is less than the current moldDegrees.
+      // Color logic
       let isMoldy = (hAngle < moldDegrees);
-      
       let baseColor = isMoldy ? moldColor : freshColor;
       
-      // Draw hole slightly darker than the surface it sits on
       p.fill(
         p.red(baseColor) * 0.75,
         p.green(baseColor) * 0.75,
         p.blue(baseColor) * 0.75
       );
-      
       p.circle(hx, hy, hSize);
     }
-    p.pop(); // End rotation logic
+    p.pop(); 
 
 
-    // --- DRAW FLIES ---
-    // Used Perlin Noise (p.noise) for smooth, organic swarming
+    // --- DRAW IDLE FLIES ---
     p.fill(0);
     p.noStroke();
 
     for (let i = 0; i < flyCount; i++) {
-      // Create unique offsets for each fly so they don't move together
-      let timeOffset = i * 500; 
-      let t = p.frameCount * 0.01 + timeOffset; // 0.01 = Slow speed
+      // 1. Assign a fixed "Home" Angle for each fly
+      // This distributes them evenly around the clock
+      let baseAngle = (i * 360) / flyCount - 90; 
 
-      // Use noise to generate smooth angle and distance values
-      let angleVal = p.noise(t) * 720; // Allow them to loop around multiple times
-      let distVal = p.noise(t + 100);  // Different noise seed for distance
+      // 2. Calculate Drift (Slow Movement)
+      // We use noise to make them gently float around their home angle
+      let t = p.frameCount * 0.02 + (i * 100);
+      let driftAngle = p.map(p.noise(t), 0, 1, -15, 15); // +/- 15 degrees
+      let driftDist  = p.map(p.noise(t + 50), 0, 1, -10, 10); // In and out breathing
 
-      // Map distance to hover around the edge of the cheese
-      let flyDist = p.map(distVal, 0, 1, radius * 0.9, radius * 1.4);
-      
-      let fx = p.cos(angleVal) * flyDist;
-      let fy = p.sin(angleVal) * flyDist;
+      // 3. Calculate Buzz (Fast Jitter)
+      let buzzX = p.random(-2, 2);
+      let buzzY = p.random(-2, 2);
+
+      // Combine positions
+      let finalAngle = baseAngle + driftAngle;
+      let finalDist = (radius + 40) + driftDist; // Hover slightly outside rind
+
+      let fx = p.cos(finalAngle) * finalDist + buzzX;
+      let fy = p.sin(finalAngle) * finalDist + buzzY;
 
       p.push();
       p.translate(fx, fy);
-      // Optional: Rotate fly to face somewhat towards movement or center
-      p.rotate(angleVal + 90); 
+      
+      // Rotate fly to face the center (plus some jitter)
+      let facingAngle = finalAngle + 90 + p.random(-10, 10);
+      p.rotate(facingAngle);
 
       // Fly Body
       p.fill(30);
       p.ellipse(0, 0, 10, 14);
       
-      // Fly Wings (Translucent)
+      // Fly Wings
       p.fill(255, 100);
       p.ellipse(-6, 2, 8, 5);
       p.ellipse(6, 2, 8, 5);
