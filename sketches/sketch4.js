@@ -17,45 +17,52 @@ registerSketch('sk4', function(p) {
     // --- DRAW FIRE (Under the pot) ---
     p.push();
     p.translate(0, 150); // Move to bottom of pot
-    
-    // Enable additive blending for a glowing fire effect
-    p.blendMode(p.ADD); 
-    
-    // We create a flickering loop
-    // No strict particle system needed, just high-speed random drawing
-    p.randomSeed(p.frameCount); // Changes every frame = rapid flickering
+    p.blendMode(p.ADD);  // Glow effect
 
-    for (let i = 0; i < 40; i++) {
-      // Random position spanning the width of the pot bottom (-160 to 160)
-      let fx = p.random(-150, 150);
-      let fy = p.random(-10, 60); // Depth of the flame below pot
+    // 1. Set a CONSTANT seed. 
+    // This ensures we are manipulating the *same* 50 flame particles every frame,
+    // rather than creating chaos.
+    p.randomSeed(9999); 
+    
+    // 2. Create a "Time" variable that moves slowly
+    // Lower number = slower fire. 
+    let t = p.frameCount * 0.02; 
+
+    for (let i = 0; i < 50; i++) {
+      // Generate a base position for this specific flame particle
+      // (This stays constant because of the fixed randomSeed)
+      let baseX = p.random(-140, 140);
+      let baseY = p.random(0, 50);
       
-      // Random size
-      let fSize = p.random(20, 60);
+      // 3. Add Smooth Movement (Noise)
+      // We use the index 'i' to give every flame a unique movement pattern
+      let xShift = p.map(p.noise(i, t), 0, 1, -20, 20);
+      let yShift = p.map(p.noise(i + 100, t), 0, 1, -15, 15);
+      
+      let fx = baseX + xShift;
+      let fy = baseY + yShift;
 
-      // Color based on position: 
-      // Center/Top is hot (Yellow/White), Sides/Bottom are cooler (Red/Orange)
-      // We also add a little blue at the very top (gas stove effect)
+      // 4. Smooth Size Breathing
+      let baseSize = p.random(30, 60);
+      let sizeBreathing = p.map(p.noise(i + 200, t * 2), 0, 1, 0.8, 1.5);
+      let fSize = baseSize * sizeBreathing;
+
+      // Color Logic (Same as before, based on distance from center)
       let fireColor;
-      
       let distFromCenter = p.abs(fx);
       
-      if (distFromCenter < 50 && fy < 10) {
-        // Core heat (Blueish/White)
-        fireColor = p.color(100, 200, 255, 150); 
+      if (distFromCenter < 50 && fy < 20) {
+        fireColor = p.color(100, 200, 255, 180); // Blue core
       } else if (distFromCenter < 100) {
-        // Middle heat (Yellow/Orange)
-        fireColor = p.color(255, p.random(100, 200), 0, 100);
+        fireColor = p.color(255, 150, 0, 120);   // Orange body
       } else {
-        // Edges (Red)
-        fireColor = p.color(255, 50, 0, 80);
+        fireColor = p.color(255, 50, 0, 100);    // Red edges
       }
 
       p.fill(fireColor);
       p.circle(fx, fy, fSize);
     }
     
-    // Turn off additive blend for the rest of the drawing
     p.blendMode(p.BLEND);
     p.pop();
 
@@ -82,7 +89,7 @@ registerSketch('sk4', function(p) {
     p.circle(215, -110, 8);
     p.circle(235, -108, 8);
 
-    // 3. Pot Body (New Flat-Bottom Shape)
+    // 3. Pot Body
     p.fill(220); // Base silver
     p.stroke(180);
     p.strokeWeight(3);
@@ -90,11 +97,11 @@ registerSketch('sk4', function(p) {
     p.beginShape();
     p.vertex(-180, -100); // Top-left rim
     p.vertex(180, -100);  // Top-right rim
-    p.vertex(160, 150);   // Bottom-right corner (flat)
-    p.vertex(-160, 150);  // Bottom-left corner (flat)
+    p.vertex(160, 150);   // Bottom-right corner
+    p.vertex(-160, 150);  // Bottom-left corner
     p.endShape(p.CLOSE);
 
-    // 4. Metallic Highlight (Shine)
+    // 4. Metallic Highlight
     p.fill(255, 100); 
     p.noStroke();
     p.beginShape();
@@ -104,11 +111,9 @@ registerSketch('sk4', function(p) {
     p.vertex(-135, 145);
     p.endShape(p.CLOSE);
 
-    // 5. Pot Interior (Dark Void)
-    // Matches the new outer shape but slightly smaller
+    // 5. Pot Interior
     p.fill(40); 
     p.noStroke();
-    
     p.beginShape();
     p.vertex(-170, -95);
     p.vertex(170, -95);
@@ -116,7 +121,7 @@ registerSketch('sk4', function(p) {
     p.vertex(-150, 145);
     p.endShape(p.CLOSE);
     
-    // Rim detail (ellipse on top)
+    // Rim detail
     p.noFill();
     p.stroke(180);
     p.strokeWeight(3);
@@ -124,7 +129,6 @@ registerSketch('sk4', function(p) {
 
 
     // --- DRAW UNPOPPED KERNELS (MINUTES) ---
-    // (Circle Packing Logic)
     p.randomSeed(100); 
     p.fill('#FFD700'); 
     p.noStroke();
@@ -138,7 +142,6 @@ registerSketch('sk4', function(p) {
       let attempts = 0;
       
       while (!validSpot && attempts < 50) {
-        // Spawn area fits within the new flat bottom
         kx = p.random(-140, 140);
         ky = p.random(80, 135); 
         validSpot = true;
@@ -153,7 +156,6 @@ registerSketch('sk4', function(p) {
           placedKernels.push({x: kx, y: ky});
 
           // Jitter (Heat)
-          // INCREASED JITTER now that there is fire!
           let jitterAmount = p.map(sc, 0, 59, 1, 5); 
           let dx = p.random(-jitterAmount, jitterAmount);
           let dy = p.random(-jitterAmount, jitterAmount);
