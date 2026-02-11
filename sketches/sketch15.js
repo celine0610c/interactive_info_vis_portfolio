@@ -62,77 +62,79 @@ registerSketch('sk15', function (p) {
 
   // ---------------- DRAW ----------------
   p.draw = function () {
-  p.background(255);
-  hovered = null;
+    p.background(255);
+    hovered = null;
 
-  const margin = 90;
-  const plotW = p.width - margin * 2;
-  const plotH = p.height - margin * 2;
+    const margin = 90;
+    const plotW = p.width - margin * 2;
+    const plotH = p.height - margin * 2;
 
-  const xMin = 20, xMax = 255;   // HP
-  const yMin = 20, yMax = 200;   // Special Attack
+    const xMin = 20, xMax = 255;   // HP
+    const yMin = 20, yMax = 200;   // Special Attack
 
-  drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
+    drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
 
-  // ---------- 1) HOVER DETECTION (NO DRAWING) ----------
-  for (let pt of points) {
-    const x = p.constrain(
-      p.map(pt.hp, xMin, xMax, margin, margin + plotW),
-      margin,
-      margin + plotW
-    );
+    // ---------- 1) HOVER DETECTION (NO DRAWING) ----------
+    for (let pt of points) {
+      const x = p.constrain(
+        p.map(pt.hp, xMin, xMax, margin, margin + plotW),
+        margin,
+        margin + plotW
+      );
 
-    const y = p.constrain(
-      p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
-      margin,
-      margin + plotH
-    );
+      const y = p.constrain(
+        p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
+        margin,
+        margin + plotH
+      );
 
-    if (p.dist(p.mouseX, p.mouseY, x, y) < 7) {
-      hovered = pt;
-      break; // IMPORTANT: stop at first match
-    }
-  }
-
-  // ---------- 2) DRAW POINTS ----------
-  points.forEach(pt => {
-    const x = p.constrain(
-      p.map(pt.hp, xMin, xMax, margin, margin + plotW),
-      margin,
-      margin + plotW
-    );
-
-    const y = p.constrain(
-      p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
-      margin,
-      margin + plotH
-    );
-
-    if (hovered === pt) {
-      p.stroke(0);
-      p.strokeWeight(1.5);
-    } else {
-      p.noStroke();
+      if (p.dist(p.mouseX, p.mouseY, x, y) < 7) {
+        hovered = pt;
+        break; // IMPORTANT: stop at first match
+      }
     }
 
-    p.fill(typeColors[pt.type] || '#999');
-    p.circle(x, y, pt.legendary ? 10 : 6);
-  });
+    // ---------- 2) DRAW POINTS ----------
+    points.forEach(pt => {
+      const x = p.constrain(
+        p.map(pt.hp, xMin, xMax, margin, margin + plotW),
+        margin,
+        margin + plotW
+      );
 
-  // ---------- TITLE ----------
-  p.noStroke();
-  p.fill(0);
-  p.textAlign(p.CENTER);
-  p.textSize(26);
-  p.text('Pokemon HP vs Special Attack', p.width / 2, 45);
+      const y = p.constrain(
+        p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
+        margin,
+        margin + plotH
+      );
 
-  // ---------- TOOLTIP ----------
-  if (hovered) drawTooltip(hovered);
-};
+      if (hovered === pt) {
+        p.stroke(0);
+        p.strokeWeight(1.5);
+      } else {
+        p.noStroke();
+      }
+
+      p.fill(typeColors[pt.type] || '#999');
+      p.circle(x, y, pt.legendary ? 10 : 6);
+    });
+
+    // ---------- TITLE ----------
+    p.noStroke();
+    p.fill(0);
+    p.textAlign(p.CENTER);
+    p.textSize(26);
+    p.text('Pokemon HP vs Special Attack', p.width / 2, 45);
+
+    // ---------- TOOLTIP ----------
+    if (hovered) drawTooltip(hovered);
+  };
 
 
   // ---------------- AXES ----------------
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
+    p.push(); // 🔒 lock drawing state
+
     p.stroke(0);
     p.line(margin, margin, margin, margin + h);
     p.line(margin, margin + h, margin + w, margin + h);
@@ -142,7 +144,7 @@ registerSketch('sk15', function (p) {
     p.textSize(12);
 
     // X-axis ticks (HP)
-    p.textAlign(p.CENTER);
+    p.textAlign(p.CENTER, p.BASELINE);
     for (let v = 50; v <= xMax; v += 50) {
       const x = p.map(v, xMin, xMax, margin, margin + w);
       p.stroke(0);
@@ -162,7 +164,7 @@ registerSketch('sk15', function (p) {
     }
 
     // Axis labels
-    p.textAlign(p.CENTER);
+    p.textAlign(p.CENTER, p.BASELINE);
     p.text('HP', margin + w / 2, margin + h + 50);
 
     p.push();
@@ -170,32 +172,40 @@ registerSketch('sk15', function (p) {
     p.rotate(-p.HALF_PI);
     p.text('Special Attack', 0, 0);
     p.pop();
+
+    p.pop(); // 🔓 restore state
   }
+
 
   // ---------------- TOOLTIP ----------------
   function drawTooltip(pt) {
-    const x = p.mouseX + 12;
-    const y = p.mouseY + 12;
+  p.push(); // 🔒 lock state
 
-    p.fill(255);
-    p.stroke(0);
-    p.rect(x, y, 200, 130, 6);
+  const x = p.mouseX + 12;
+  const y = p.mouseY + 12;
 
-    p.noStroke();
-    p.fill(0);
-    p.textAlign(p.LEFT, p.TOP);
-    p.textSize(12);
+  p.fill(255);
+  p.stroke(0);
+  p.rect(x, y, 200, 130, 6);
 
-    p.text(pt.name, x + 10, y + 8);
-    p.text(`Type: ${pt.type}`, x + 10, y + 26);
-    p.text(`HP: ${pt.hp}`, x + 10, y + 44);
-    p.text(`Sp. Atk: ${pt.spAtk}`, x + 10, y + 62);
-    if (pt.legendary) p.text('Legendary', x + 10, y + 80);
+  p.noStroke();
+  p.fill(0);
+  p.textAlign(p.LEFT, p.TOP);
+  p.textSize(12);
 
-    if (pt.sprite && spriteCache[pt.sprite]) {
-      p.image(spriteCache[pt.sprite], x + 130, y + 32, 48, 48);
-    }
+  p.text(pt.name, x + 10, y + 8);
+  p.text(`Type: ${pt.type}`, x + 10, y + 26);
+  p.text(`HP: ${pt.hp}`, x + 10, y + 44);
+  p.text(`Sp. Atk: ${pt.spAtk}`, x + 10, y + 62);
+  if (pt.legendary) p.text('Legendary', x + 10, y + 80);
+
+  if (pt.sprite && spriteCache[pt.sprite]) {
+    p.image(spriteCache[pt.sprite], x + 130, y + 32, 48, 48);
   }
+
+  p.pop(); // 🔓 restore state
+}
+
 
   // ---------------- RESIZE ----------------
   p.windowResized = function () {
