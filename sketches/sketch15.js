@@ -5,6 +5,7 @@ registerSketch('sk15', function (p) {
   let points = [];
   let hovered = null;
   let spriteCache = {};
+  let activeTypes = {}; // legend filter state
 
   const typeColors = {
     grass: '#78C850',
@@ -27,6 +28,8 @@ registerSketch('sk15', function (p) {
     normal: '#A8A878'
   };
 
+  const types = Object.keys(typeColors);
+
   // ---------------- PRELOAD ----------------
   p.preload = function () {
     table = p.loadTable(
@@ -41,10 +44,11 @@ registerSketch('sk15', function (p) {
     p.createCanvas(p.windowWidth, p.windowHeight);
     p.textFont('Arial');
 
+    // Initialize legend state (all types visible)
+    types.forEach(t => activeTypes[t] = true);
+
     table.rows.forEach(row => {
       const spriteUrl = row.get('sprite');
-
-      // Cache sprite images once
       if (spriteUrl && !spriteCache[spriteUrl]) {
         spriteCache[spriteUrl] = p.loadImage(spriteUrl);
       }
@@ -69,71 +73,51 @@ registerSketch('sk15', function (p) {
     const plotW = p.width - margin * 2;
     const plotH = p.height - margin * 2;
 
-    const xMin = 20, xMax = 255;   // HP
-    const yMin = 20, yMax = 200;   // Special Attack
+    const xMin = 20, xMax = 255;
+    const yMin = 20, yMax = 200;
 
     drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
+    drawLegend();
 
-    // ---------- 1) HOVER DETECTION (NO DRAWING) ----------
+    // ---------- HOVER DETECTION ----------
     for (let pt of points) {
-      const x = p.constrain(
-        p.map(pt.hp, xMin, xMax, margin, margin + plotW),
-        margin,
-        margin + plotW
-      );
+      if (!activeTypes[pt.type]) continue;
 
-      const y = p.constrain(
-        p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
-        margin,
-        margin + plotH
-      );
+      const x = clampX(pt.hp, margin, plotW, xMin, xMax);
+      const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
 
-      if (p.dist(p.mouseX, p.mouseY, x, y) < 7) {
+      if (p.dist(p.mouseX, p.mouseY, x, y) < 14) {
         hovered = pt;
-        break; // IMPORTANT: stop at first match
+        break;
       }
     }
 
-    // ---------- 2) DRAW POINTS ----------
+    // ---------- DRAW SPRITES ----------
     points.forEach(pt => {
-      const x = p.constrain(
-        p.map(pt.hp, xMin, xMax, margin, margin + plotW),
-        margin,
-        margin + plotW
-      );
+      if (!activeTypes[pt.type]) return;
 
-      const y = p.constrain(
-        p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
-        margin,
-        margin + plotH
-      );
+      const x = clampX(pt.hp, margin, plotW, xMin, xMax);
+      const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
 
-      if (hovered === pt) {
-        p.stroke(0);
-        p.strokeWeight(1.5);
-      } else {
-        p.noStroke();
+      if (pt.sprite && spriteCache[pt.sprite]) {
+        p.imageMode(p.CENTER);
+        p.image(spriteCache[pt.sprite], x, y, 28, 28);
       }
-
-      p.fill(typeColors[pt.type] || '#999');
-      p.circle(x, y, pt.legendary ? 10 : 6);
     });
 
     // ---------- TITLE ----------
-    p.noStroke();
     p.fill(0);
+    p.noStroke();
     p.textAlign(p.CENTER);
     p.textSize(26);
-    p.text('Pokemon HP vs Special Attack', p.width / 2, 45);
+    p.text('Pokémon HP vs Special Attack', p.width / 2, 45);
 
-    // ---------- TOOLTIP ----------
     if (hovered) drawTooltip(hovered);
   };
 
-
   // ---------------- AXES ----------------
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
-    p.push(); // 🔒 lock drawing state
+    p.push();
 
     p.stroke(0);
     p.line(margin, margin, margin, margin + h);
@@ -143,8 +127,7 @@ registerSketch('sk15', function (p) {
     p.fill(0);
     p.textSize(12);
 
-    // X-axis ticks (HP)
-    p.textAlign(p.CENTER, p.BASELINE);
+    p.textAlign(p.CENTER);
     for (let v = 50; v <= xMax; v += 50) {
       const x = p.map(v, xMin, xMax, margin, margin + w);
       p.stroke(0);
@@ -153,7 +136,6 @@ registerSketch('sk15', function (p) {
       p.text(v, x, margin + h + 22);
     }
 
-    // Y-axis ticks (Sp. Atk)
     p.textAlign(p.RIGHT, p.CENTER);
     for (let v = 50; v <= yMax; v += 50) {
       const y = p.map(v, yMin, yMax, margin + h, margin);
@@ -163,8 +145,7 @@ registerSketch('sk15', function (p) {
       p.text(v, margin - 10, y);
     }
 
-    // Axis labels
-    p.textAlign(p.CENTER, p.BASELINE);
+    p.textAlign(p.CENTER);
     p.text('HP', margin + w / 2, margin + h + 50);
 
     p.push();
@@ -173,41 +154,95 @@ registerSketch('sk15', function (p) {
     p.text('Special Attack', 0, 0);
     p.pop();
 
-    p.pop(); // 🔓 restore state
+    p.pop();
   }
 
+  // ---------------- LEGEND ----------------
+  function drawLegend() {
+    p.push();
+
+    const x = p.width - 160;
+    let y = 90;
+
+    p.textAlign(p.LEFT, p.CENTER);
+    p.textSize(12);
+
+    types.forEach(t => {
+      p.fill(activeTypes[t] ? typeColors[t] : '#ddd');
+      p.noStroke();
+      p.rect(x, y - 6, 14, 14);
+
+      p.fill(0);
+      p.text(t, x + 20, y);
+
+      y += 20;
+    });
+
+    p.pop();
+  }
+
+  // ---------------- INTERACTION ----------------
+  p.mousePressed = function () {
+    const x = p.width - 160;
+    let y = 90;
+
+    types.forEach(t => {
+      if (
+        p.mouseX > x && p.mouseX < x + 14 &&
+        p.mouseY > y - 6 && p.mouseY < y + 8
+      ) {
+        activeTypes[t] = !activeTypes[t];
+      }
+      y += 20;
+    });
+  };
 
   // ---------------- TOOLTIP ----------------
   function drawTooltip(pt) {
-  p.push(); // 🔒 lock state
+    p.push();
 
-  const x = p.mouseX + 12;
-  const y = p.mouseY + 12;
+    const x = p.mouseX + 12;
+    const y = p.mouseY + 12;
 
-  p.fill(255);
-  p.stroke(0);
-  p.rect(x, y, 200, 130, 6);
+    p.fill(255);
+    p.stroke(0);
+    p.rect(x, y, 200, 130, 6);
 
-  p.noStroke();
-  p.fill(0);
-  p.textAlign(p.LEFT, p.TOP);
-  p.textSize(12);
+    p.noStroke();
+    p.fill(0);
+    p.textAlign(p.LEFT, p.TOP);
+    p.textSize(12);
 
-  p.text(pt.name, x + 10, y + 8);
-  p.text(`Type: ${pt.type}`, x + 10, y + 26);
-  p.text(`HP: ${pt.hp}`, x + 10, y + 44);
-  p.text(`Sp. Atk: ${pt.spAtk}`, x + 10, y + 62);
-  if (pt.legendary) p.text('Legendary', x + 10, y + 80);
+    p.text(pt.name, x + 10, y + 8);
+    p.text(`Type: ${pt.type}`, x + 10, y + 26);
+    p.text(`HP: ${pt.hp}`, x + 10, y + 44);
+    p.text(`Sp. Atk: ${pt.spAtk}`, x + 10, y + 62);
+    if (pt.legendary) p.text('Legendary', x + 10, y + 80);
 
-  if (pt.sprite && spriteCache[pt.sprite]) {
-    p.image(spriteCache[pt.sprite], x + 130, y + 32, 48, 48);
+    if (pt.sprite && spriteCache[pt.sprite]) {
+      p.image(spriteCache[pt.sprite], x + 130, y + 32, 48, 48);
+    }
+
+    p.pop();
   }
 
-  p.pop(); // 🔓 restore state
-}
+  // ---------------- HELPERS ----------------
+  function clampX(v, margin, w, min, max) {
+    return p.constrain(
+      p.map(v, min, max, margin, margin + w),
+      margin,
+      margin + w
+    );
+  }
 
+  function clampY(v, margin, h, min, max) {
+    return p.constrain(
+      p.map(v, min, max, margin + h, margin),
+      margin,
+      margin + h
+    );
+  }
 
-  // ---------------- RESIZE ----------------
   p.windowResized = function () {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
   };
