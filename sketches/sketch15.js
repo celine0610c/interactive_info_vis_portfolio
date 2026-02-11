@@ -110,3 +110,22 @@ function drawChord(from, to) {
   strokeWeight(3);
   bezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2);
 }
+
+function draw() {
+  background(255);
+
+  // Draw chords first
+  for (let d of dominance) {
+    drawChord(d.from, d.to);
+  }
+
+  // Draw outer arcs on top
+  drawOuterRing();
+
+  // Title
+  fill(0);
+  noStroke();
+  textAlign(CENTER);
+  textSize(28);
+  text("Pokémon Types Dominance", centerX, 50);
+}
