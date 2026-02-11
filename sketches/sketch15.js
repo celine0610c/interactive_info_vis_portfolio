@@ -1,6 +1,5 @@
 registerSketch('sk15', function (p) {
 
-  // ---------------- DATA ----------------
   let table;
   let points = [];
   let hovered = null;
@@ -8,29 +7,21 @@ registerSketch('sk15', function (p) {
   let activeTypes = {};
 
   const typeColors = {
-    grass: '#78C850',
     fire: '#F08030',
     water: '#6890F0',
     electric: '#F8D030',
-    ice: '#98D8D8',
-    fighting: '#C03028',
-    poison: '#A040A0',
-    ground: '#E0C068',
-    flying: '#A890F0',
     psychic: '#F85888',
-    bug: '#A8B820',
-    rock: '#B8A038',
-    ghost: '#705898',
     dragon: '#7038F8',
+    rock: '#B8A038',
+    grass: '#78C850',
+    ice: '#98D8D8',
     dark: '#705848',
-    steel: '#B8B8D0',
     fairy: '#EE99AC',
     normal: '#A8A878'
   };
 
   const types = Object.keys(typeColors);
 
-  // ---------------- PRELOAD ----------------
   p.preload = function () {
     table = p.loadTable(
       'sketches/pokemon_with_sprites.csv',
@@ -39,9 +30,9 @@ registerSketch('sk15', function (p) {
     );
   };
 
-  // ---------------- SETUP ----------------
   p.setup = function () {
-    p.createCanvas(p.windowWidth, p.windowHeight);
+    // Instagram portrait format
+    p.createCanvas(1080, 1350);
     p.textFont('Arial');
 
     types.forEach(t => activeTypes[t] = true);
@@ -63,243 +54,200 @@ registerSketch('sk15', function (p) {
     });
   };
 
-  // ---------------- DRAW ----------------
   p.draw = function () {
     p.background('#FAFAFA');
     hovered = null;
 
-    const margin = 90;
+    const margin = 140;
     const plotW = p.width - margin * 2;
-    const plotH = p.height - margin * 2;
+    const plotH = 720;
 
     const xMin = 20, xMax = 255;
     const yMin = 20, yMax = 200;
 
+    drawTitle();
+    drawAnnotations(margin, plotW, plotH);
     drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
-    drawLegend();
 
-    // ---------- HOVER DETECTION ----------
+    // Hover detection
     for (let pt of points) {
       if (!activeTypes[pt.type]) continue;
-
       const x = clampX(pt.hp, margin, plotW, xMin, xMax);
       const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
-
       if (p.dist(p.mouseX, p.mouseY, x, y) < 18) {
         hovered = pt;
         break;
       }
     }
 
-    // ---------- DRAW SPRITES ----------
+    // Sprites
     points.forEach(pt => {
       if (!activeTypes[pt.type]) return;
-
       const x = clampX(pt.hp, margin, plotW, xMin, xMax);
       const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
-      const size = hovered === pt ? 42 : 32;
+      const size = hovered === pt ? 46 : 34;
 
       if (pt.sprite && spriteCache[pt.sprite]) {
         p.imageMode(p.CENTER);
+        p.tint(255, hovered && hovered !== pt ? 90 : 255);
         p.image(spriteCache[pt.sprite], x, y, size, size);
+        p.noTint();
       }
     });
 
-    // ---------- TITLE ----------
-    p.fill(30);
-    p.textAlign(p.CENTER);
-    p.textSize(28);
-    p.textStyle(p.BOLD);
-    p.text('Pokémon HP vs Special Attack', p.width / 2, 42);
-
-    p.textSize(14);
-    p.textStyle(p.NORMAL);
-    p.fill(90);
-    p.text('Sprite-based scatter plot with type filtering', p.width / 2, 62);
+    drawLegend();
 
     if (hovered) drawTooltip(hovered);
   };
 
-  // ---------------- AXES ----------------
+  function drawTitle() {
+    p.fill(20);
+    p.textAlign(p.CENTER);
+    p.textSize(36);
+    p.textStyle(p.BOLD);
+    p.text(
+      'Glass Cannons and Tanks',
+      p.width / 2,
+      70
+    );
+
+    p.textSize(18);
+    p.textStyle(p.NORMAL);
+    p.fill(80);
+    p.text(
+      'How Pokémon trade HP for Special Attack',
+      p.width / 2,
+      105
+    );
+  }
+
+  function drawAnnotations(margin, w, h) {
+    p.push();
+    p.noStroke();
+    p.textAlign(p.LEFT, p.CENTER);
+    p.textSize(16);
+    p.fill(60);
+
+    // Glass cannons
+    p.text('High damage,\nlow survivability', margin + 40, margin + 80);
+    p.stroke(150);
+    p.line(margin + 140, margin + 120, margin + 260, margin + 260);
+
+    // Tanks
+    p.noStroke();
+    p.text('High survivability,\nlower damage', margin + w - 320, margin + h - 80);
+    p.stroke(150);
+    p.line(margin + w - 200, margin + h - 120, margin + w - 340, margin + h - 260);
+
+    p.pop();
+  }
+
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
     p.push();
 
-    // Gridlines
-    p.stroke(230);
-    p.strokeWeight(1);
-
+    p.stroke(220);
     for (let v = 50; v <= xMax; v += 50) {
       const x = p.map(v, xMin, xMax, margin, margin + w);
       p.line(x, margin, x, margin + h);
     }
-
     for (let v = 50; v <= yMax; v += 50) {
       const y = p.map(v, yMin, yMax, margin + h, margin);
       p.line(margin, y, margin + w, y);
     }
 
-    // Axes
     p.stroke(0);
-    p.strokeWeight(1.5);
     p.line(margin, margin, margin, margin + h);
     p.line(margin, margin + h, margin + w, margin + h);
 
     p.noStroke();
     p.fill(0);
-    p.textSize(12);
+    p.textSize(14);
 
     p.textAlign(p.CENTER);
-    for (let v = 50; v <= xMax; v += 50) {
-      const x = p.map(v, xMin, xMax, margin, margin + w);
-      p.text(v, x, margin + h + 22);
-    }
-
-    p.textAlign(p.RIGHT, p.CENTER);
-    for (let v = 50; v <= yMax; v += 50) {
-      const y = p.map(v, yMin, yMax, margin + h, margin);
-      p.text(v, margin - 10, y);
-    }
-
-    p.textAlign(p.CENTER);
-    p.text('HP', margin + w / 2, margin + h + 50);
+    p.text('HP →', margin + w / 2, margin + h + 55);
 
     p.push();
-    p.translate(30, margin + h / 2);
+    p.translate(60, margin + h / 2);
     p.rotate(-p.HALF_PI);
-    p.text('Special Attack', 0, 0);
+    p.text('Special Attack →', 0, 0);
     p.pop();
 
     p.pop();
   }
 
-  // ---------------- LEGEND ----------------
   function drawLegend() {
     p.push();
+    const x = 80;
+    let y = 980;
 
-    const x = p.width - 160;
-    let y = 90;
-
-    p.fill(0);
-    p.textSize(14);
-    p.textStyle(p.BOLD);
-    p.text('Type Filter', x, y - 22);
-
-    p.textStyle(p.NORMAL);
-    p.textSize(13);
     p.textAlign(p.LEFT, p.CENTER);
+    p.textSize(14);
+    p.fill(0);
+    p.text('Filter by type:', x, y - 20);
 
     types.forEach(t => {
       p.fill(activeTypes[t] ? typeColors[t] : '#ddd');
-      p.noStroke();
-      p.rect(x, y - 7, 14, 14, 4);
-
+      p.rect(x, y - 6, 14, 14, 4);
       p.fill(0);
-      p.text(t, x + 20, y);
-
-      y += 20;
+      p.text(t, x + 22, y);
+      y += 22;
     });
 
     p.pop();
   }
 
-  // ---------------- INTERACTION ----------------
   p.mousePressed = function () {
-    const x = p.width - 160;
-    let y = 90;
-
+    const x = 80;
+    let y = 980;
     types.forEach(t => {
       if (
         p.mouseX > x && p.mouseX < x + 14 &&
-        p.mouseY > y - 7 && p.mouseY < y + 7
+        p.mouseY > y - 6 && p.mouseY < y + 8
       ) {
         activeTypes[t] = !activeTypes[t];
       }
-      y += 20;
+      y += 22;
     });
   };
 
-  // ---------------- TOOLTIP ----------------
   function drawTooltip(pt) {
     p.push();
 
-    const padding = 12;
-    const boxW = 230;
-    const boxH = 150;
-    const x = p.mouseX + 16;
-    const y = p.mouseY + 16;
+    const x = p.mouseX + 20;
+    const y = p.mouseY + 20;
 
-    // Shadow
-    p.noStroke();
-    p.fill(0, 40);
-    p.rect(x + 4, y + 4, boxW, boxH, 10);
-
-    // Background
     p.fill(255);
     p.stroke(180);
-    p.rect(x, y, boxW, boxH, 10);
+    p.rect(x, y, 240, 150, 10);
 
-    // Name
     p.noStroke();
     p.fill(0);
-    p.textAlign(p.LEFT, p.TOP);
     p.textSize(16);
     p.textStyle(p.BOLD);
-    p.text(pt.name, x + padding, y + padding);
+    p.text(pt.name, x + 12, y + 12);
 
-    // Type pill
+    p.textSize(13);
     p.textStyle(p.NORMAL);
-    p.textSize(12);
-    const typeColor = typeColors[pt.type] || '#ccc';
-    p.fill(typeColor);
-    p.rect(x + padding, y + 36, 70, 18, 9);
-
-    p.fill(255);
-    p.textAlign(p.CENTER, p.CENTER);
-    p.text(pt.type, x + padding + 35, y + 45);
-
-    // Stats
-    p.textAlign(p.LEFT, p.TOP);
-    p.fill(0);
-    p.text(`HP: ${pt.hp}`, x + padding, y + 68);
-    p.text(`Sp. Atk: ${pt.spAtk}`, x + padding, y + 88);
+    p.text(`HP: ${pt.hp}`, x + 12, y + 48);
+    p.text(`Sp. Atk: ${pt.spAtk}`, x + 12, y + 68);
 
     if (pt.legendary) {
       p.fill('#D4AF37');
-      p.text('★ Legendary', x + padding, y + 108);
+      p.text('★ Legendary', x + 12, y + 90);
     }
 
-    // Sprite
     if (pt.sprite && spriteCache[pt.sprite]) {
-      p.image(
-        spriteCache[pt.sprite],
-        x + boxW - 60,
-        y + 65,
-        72,
-        72
-      );
+      p.image(spriteCache[pt.sprite], x + 170, y + 70, 80, 80);
     }
 
     p.pop();
   }
 
-  // ---------------- HELPERS ----------------
   function clampX(v, margin, w, min, max) {
-    return p.constrain(
-      p.map(v, min, max, margin, margin + w),
-      margin,
-      margin + w
-    );
+    return p.map(v, min, max, margin, margin + w);
   }
 
   function clampY(v, margin, h, min, max) {
-    return p.constrain(
-      p.map(v, min, max, margin + h, margin),
-      margin,
-      margin + h
-    );
+    return p.map(v, min, max, margin + h, margin);
   }
-
-  p.windowResized = function () {
-    p.resizeCanvas(p.windowWidth, p.windowHeight);
-  };
 });
