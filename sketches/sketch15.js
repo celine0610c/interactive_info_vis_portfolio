@@ -88,3 +88,25 @@ function drawOuterRing() {
     text(types[i], lx, ly);
   }
 }
+
+function drawChord(from, to) {
+  let a1 = typeAngles[from];
+  let a2 = typeAngles[to];
+
+  let x1 = centerX + cos(a1) * radius;
+  let y1 = centerY + sin(a1) * radius;
+
+  let x2 = centerX + cos(a2) * radius;
+  let y2 = centerY + sin(a2) * radius;
+
+  let cx1 = centerX + cos(a1) * radius * 0.4;
+  let cy1 = centerY + sin(a1) * radius * 0.4;
+
+  let cx2 = centerX + cos(a2) * radius * 0.4;
+  let cy2 = centerY + sin(a2) * radius * 0.4;
+
+  noFill();
+  stroke(typeColors[from]);
+  strokeWeight(3);
+  bezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2);
+}
