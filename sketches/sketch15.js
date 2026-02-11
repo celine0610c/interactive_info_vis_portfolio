@@ -64,3 +64,27 @@ function setup() {
 
   textFont("Arial");
 }
+
+function drawOuterRing() {
+  strokeWeight(30);
+  noFill();
+
+  for (let i = 0; i < types.length; i++) {
+    let start = i * angleStep;
+    let end = start + angleStep * 0.95;
+
+    stroke(typeColors[types[i]]);
+    arc(centerX, centerY, radius * 2, radius * 2, start, end);
+
+    // Label
+    let labelAngle = start + angleStep / 2;
+    let lx = centerX + cos(labelAngle) * (radius + 45);
+    let ly = centerY + sin(labelAngle) * (radius + 45);
+
+    noStroke();
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(12);
+    text(types[i], lx, ly);
+  }
+}
