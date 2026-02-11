@@ -1,3 +1,5 @@
+console.log("sk15 loaded");
+
 registerSketch('sk15', function (p) {
 
   const types = [
