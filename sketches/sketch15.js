@@ -8,20 +8,34 @@ registerSketch('sk15', function (p) {
   let activeTypes = {};
 
   const typeColors = {
+    normal: '#A8A878',
     fire: '#F08030',
     water: '#6890F0',
-    electric: '#F8D030',
-    psychic: '#F85888',
-    dragon: '#7038F8',
-    rock: '#B8A038',
     grass: '#78C850',
+    electric: '#F8D030',
     ice: '#98D8D8',
+    fighting: '#C03028',
+    poison: '#A040A0',
+    ground: '#E0C068',
+    flying: '#A890F0',
+    psychic: '#F85888',
+    bug: '#A8B820',
+    rock: '#B8A038',
+    ghost: '#705898',
+    dragon: '#7038F8',
     dark: '#705848',
-    fairy: '#EE99AC',
-    normal: '#A8A878'
+    steel: '#B8B8D0',
+    fairy: '#EE99AC'
   };
 
   const types = Object.keys(typeColors);
+
+  const clearBtn = {
+    x: 80,
+    y: 1000,
+    w: 140,
+    h: 32
+  };
 
   // ---------------- PRELOAD ----------------
   p.preload = function () {
@@ -34,8 +48,8 @@ registerSketch('sk15', function (p) {
 
   // ---------------- SETUP ----------------
   p.setup = function () {
-    // Instagram portrait aspect ratio
-    p.createCanvas(1080, 1350);
+    // Taller canvas so legend is never clipped
+    p.createCanvas(1080, 1600);
     p.textFont('Arial');
 
     types.forEach(t => activeTypes[t] = true);
@@ -102,6 +116,7 @@ registerSketch('sk15', function (p) {
       }
     });
 
+    drawClearButton();
     drawLegend();
 
     if (hovered) drawTooltip(hovered);
@@ -133,13 +148,11 @@ registerSketch('sk15', function (p) {
     p.fill(60);
     p.stroke(150);
 
-    // Glass cannons
     p.noStroke();
     p.text('High damage,\nlow survivability', margin + 40, margin + 80);
     p.stroke(150);
     p.line(margin + 150, margin + 130, margin + 280, margin + 280);
 
-    // Tanks
     p.noStroke();
     p.text(
       'High survivability,\nlower damage',
@@ -161,7 +174,6 @@ registerSketch('sk15', function (p) {
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
     p.push();
 
-    // Gridlines
     p.stroke(225);
     for (let v = 50; v <= xMax; v += 50) {
       const x = p.map(v, xMin, xMax, margin, margin + w);
@@ -172,7 +184,6 @@ registerSketch('sk15', function (p) {
       p.line(margin, y, margin + w, y);
     }
 
-    // Axes
     p.stroke(0);
     p.line(margin, margin, margin, margin + h);
     p.line(margin, margin + h, margin + w, margin + h);
@@ -192,11 +203,34 @@ registerSketch('sk15', function (p) {
     p.pop();
   }
 
+  // ---------------- CLEAR BUTTON ----------------
+  function drawClearButton() {
+    p.push();
+
+    const hovering =
+      p.mouseX > clearBtn.x &&
+      p.mouseX < clearBtn.x + clearBtn.w &&
+      p.mouseY > clearBtn.y &&
+      p.mouseY < clearBtn.y + clearBtn.h;
+
+    p.noStroke();
+    p.fill(hovering ? '#E0E0E0' : '#F2F2F2');
+    p.rect(clearBtn.x, clearBtn.y, clearBtn.w, clearBtn.h, 8);
+
+    p.fill(40);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.textSize(14);
+    p.textStyle(p.BOLD);
+    p.text('Uncheck all', clearBtn.x + clearBtn.w / 2, clearBtn.y + clearBtn.h / 2);
+
+    p.pop();
+  }
+
   // ---------------- LEGEND ----------------
   function drawLegend() {
     p.push();
     const x = 80;
-    let y = 980;
+    let y = 1080;
 
     p.textAlign(p.LEFT, p.CENTER);
     p.textSize(14);
@@ -216,8 +250,20 @@ registerSketch('sk15', function (p) {
 
   // ---------------- INTERACTION ----------------
   p.mousePressed = function () {
+    // Clear all filters
+    if (
+      p.mouseX > clearBtn.x &&
+      p.mouseX < clearBtn.x + clearBtn.w &&
+      p.mouseY > clearBtn.y &&
+      p.mouseY < clearBtn.y + clearBtn.h
+    ) {
+      types.forEach(t => activeTypes[t] = false);
+      return;
+    }
+
+    // Legend toggles
     const x = 80;
-    let y = 980;
+    let y = 1080;
 
     types.forEach(t => {
       if (
@@ -241,21 +287,17 @@ registerSketch('sk15', function (p) {
     let x = p.mouseX + 20;
     let y = p.mouseY + 20;
 
-    // Keep tooltip on screen
     if (x + boxW > p.width) x = p.mouseX - boxW - 20;
     if (y + boxH > p.height) y = p.mouseY - boxH - 20;
 
-    // Shadow
     p.noStroke();
     p.fill(0, 40);
     p.rect(x + 4, y + 4, boxW, boxH, 10);
 
-    // Box
     p.fill(255);
     p.stroke(180);
     p.rect(x, y, boxW, boxH, 10);
 
-    // Text
     p.noStroke();
     p.fill(0);
     p.textAlign(p.LEFT, p.TOP);
@@ -274,7 +316,6 @@ registerSketch('sk15', function (p) {
       p.text('★ Legendary', x + padding, y + 92);
     }
 
-    // Sprite
     if (pt.sprite && spriteCache[pt.sprite]) {
       p.image(
         spriteCache[pt.sprite],
