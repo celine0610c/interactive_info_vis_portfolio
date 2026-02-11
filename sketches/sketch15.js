@@ -5,7 +5,7 @@ registerSketch('sk15', function (p) {
   let points = [];
   let hovered = null;
   let spriteCache = {};
-  let activeTypes = {}; // legend filter state
+  let activeTypes = {};
 
   const typeColors = {
     grass: '#78C850',
@@ -44,7 +44,6 @@ registerSketch('sk15', function (p) {
     p.createCanvas(p.windowWidth, p.windowHeight);
     p.textFont('Arial');
 
-    // Initialize legend state (all types visible)
     types.forEach(t => activeTypes[t] = true);
 
     table.rows.forEach(row => {
@@ -66,7 +65,7 @@ registerSketch('sk15', function (p) {
 
   // ---------------- DRAW ----------------
   p.draw = function () {
-    p.background(255);
+    p.background('#FAFAFA');
     hovered = null;
 
     const margin = 90;
@@ -86,7 +85,7 @@ registerSketch('sk15', function (p) {
       const x = clampX(pt.hp, margin, plotW, xMin, xMax);
       const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
 
-      if (p.dist(p.mouseX, p.mouseY, x, y) < 14) {
+      if (p.dist(p.mouseX, p.mouseY, x, y) < 18) {
         hovered = pt;
         break;
       }
@@ -98,19 +97,25 @@ registerSketch('sk15', function (p) {
 
       const x = clampX(pt.hp, margin, plotW, xMin, xMax);
       const y = clampY(pt.spAtk, margin, plotH, yMin, yMax);
+      const size = hovered === pt ? 42 : 32;
 
       if (pt.sprite && spriteCache[pt.sprite]) {
         p.imageMode(p.CENTER);
-        p.image(spriteCache[pt.sprite], x, y, 28, 28);
+        p.image(spriteCache[pt.sprite], x, y, size, size);
       }
     });
 
     // ---------- TITLE ----------
-    p.fill(0);
-    p.noStroke();
+    p.fill(30);
     p.textAlign(p.CENTER);
-    p.textSize(26);
-    p.text('Pokémon HP vs Special Attack', p.width / 2, 45);
+    p.textSize(28);
+    p.textStyle(p.BOLD);
+    p.text('Pokémon HP vs Special Attack', p.width / 2, 42);
+
+    p.textSize(14);
+    p.textStyle(p.NORMAL);
+    p.fill(90);
+    p.text('Sprite-based scatter plot with type filtering', p.width / 2, 62);
 
     if (hovered) drawTooltip(hovered);
   };
@@ -119,7 +124,23 @@ registerSketch('sk15', function (p) {
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
     p.push();
 
+    // Gridlines
+    p.stroke(230);
+    p.strokeWeight(1);
+
+    for (let v = 50; v <= xMax; v += 50) {
+      const x = p.map(v, xMin, xMax, margin, margin + w);
+      p.line(x, margin, x, margin + h);
+    }
+
+    for (let v = 50; v <= yMax; v += 50) {
+      const y = p.map(v, yMin, yMax, margin + h, margin);
+      p.line(margin, y, margin + w, y);
+    }
+
+    // Axes
     p.stroke(0);
+    p.strokeWeight(1.5);
     p.line(margin, margin, margin, margin + h);
     p.line(margin, margin + h, margin + w, margin + h);
 
@@ -130,18 +151,12 @@ registerSketch('sk15', function (p) {
     p.textAlign(p.CENTER);
     for (let v = 50; v <= xMax; v += 50) {
       const x = p.map(v, xMin, xMax, margin, margin + w);
-      p.stroke(0);
-      p.line(x, margin + h, x, margin + h + 6);
-      p.noStroke();
       p.text(v, x, margin + h + 22);
     }
 
     p.textAlign(p.RIGHT, p.CENTER);
     for (let v = 50; v <= yMax; v += 50) {
       const y = p.map(v, yMin, yMax, margin + h, margin);
-      p.stroke(0);
-      p.line(margin - 6, y, margin, y);
-      p.noStroke();
       p.text(v, margin - 10, y);
     }
 
@@ -164,13 +179,19 @@ registerSketch('sk15', function (p) {
     const x = p.width - 160;
     let y = 90;
 
+    p.fill(0);
+    p.textSize(14);
+    p.textStyle(p.BOLD);
+    p.text('Type Filter', x, y - 22);
+
+    p.textStyle(p.NORMAL);
+    p.textSize(13);
     p.textAlign(p.LEFT, p.CENTER);
-    p.textSize(12);
 
     types.forEach(t => {
       p.fill(activeTypes[t] ? typeColors[t] : '#ddd');
       p.noStroke();
-      p.rect(x, y - 6, 14, 14);
+      p.rect(x, y - 7, 14, 14, 4);
 
       p.fill(0);
       p.text(t, x + 20, y);
@@ -189,7 +210,7 @@ registerSketch('sk15', function (p) {
     types.forEach(t => {
       if (
         p.mouseX > x && p.mouseX < x + 14 &&
-        p.mouseY > y - 6 && p.mouseY < y + 8
+        p.mouseY > y - 7 && p.mouseY < y + 7
       ) {
         activeTypes[t] = !activeTypes[t];
       }
@@ -201,26 +222,61 @@ registerSketch('sk15', function (p) {
   function drawTooltip(pt) {
     p.push();
 
-    const x = p.mouseX + 12;
-    const y = p.mouseY + 12;
+    const padding = 12;
+    const boxW = 230;
+    const boxH = 150;
+    const x = p.mouseX + 16;
+    const y = p.mouseY + 16;
 
+    // Shadow
+    p.noStroke();
+    p.fill(0, 40);
+    p.rect(x + 4, y + 4, boxW, boxH, 10);
+
+    // Background
     p.fill(255);
-    p.stroke(0);
-    p.rect(x, y, 200, 130, 6);
+    p.stroke(180);
+    p.rect(x, y, boxW, boxH, 10);
 
+    // Name
     p.noStroke();
     p.fill(0);
     p.textAlign(p.LEFT, p.TOP);
+    p.textSize(16);
+    p.textStyle(p.BOLD);
+    p.text(pt.name, x + padding, y + padding);
+
+    // Type pill
+    p.textStyle(p.NORMAL);
     p.textSize(12);
+    const typeColor = typeColors[pt.type] || '#ccc';
+    p.fill(typeColor);
+    p.rect(x + padding, y + 36, 70, 18, 9);
 
-    p.text(pt.name, x + 10, y + 8);
-    p.text(`Type: ${pt.type}`, x + 10, y + 26);
-    p.text(`HP: ${pt.hp}`, x + 10, y + 44);
-    p.text(`Sp. Atk: ${pt.spAtk}`, x + 10, y + 62);
-    if (pt.legendary) p.text('Legendary', x + 10, y + 80);
+    p.fill(255);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.text(pt.type, x + padding + 35, y + 45);
 
+    // Stats
+    p.textAlign(p.LEFT, p.TOP);
+    p.fill(0);
+    p.text(`HP: ${pt.hp}`, x + padding, y + 68);
+    p.text(`Sp. Atk: ${pt.spAtk}`, x + padding, y + 88);
+
+    if (pt.legendary) {
+      p.fill('#D4AF37');
+      p.text('★ Legendary', x + padding, y + 108);
+    }
+
+    // Sprite
     if (pt.sprite && spriteCache[pt.sprite]) {
-      p.image(spriteCache[pt.sprite], x + 130, y + 32, 48, 48);
+      p.image(
+        spriteCache[pt.sprite],
+        x + boxW - 60,
+        y + 65,
+        72,
+        72
+      );
     }
 
     p.pop();
