@@ -48,17 +48,17 @@ registerSketch('sk15', function (p) {
   ];
 
   let centerX, centerY;
-  let radius = 280;
+  let radius;
   let angleStep;
   let typeAngles = {};
 
   // ---------------- SETUP ----------------
   p.setup = function () {
-    const canvas = p.createCanvas(900, 900);
-    canvas.parent("sketch-container-sk15");
+    p.createCanvas(p.windowWidth, p.windowHeight);
 
     centerX = p.width / 2;
     centerY = p.height / 2;
+    radius = p.min(p.width, p.height) * 0.35;
 
     angleStep = p.TWO_PI / types.length;
 
@@ -73,14 +73,12 @@ registerSketch('sk15', function (p) {
   p.draw = function () {
     p.background(255);
 
-    // Chords
     for (let d of dominance) {
       drawChord(d.from, d.to);
     }
 
     drawOuterRing();
 
-    // Title
     p.fill(0);
     p.noStroke();
     p.textAlign(p.CENTER);
@@ -133,4 +131,11 @@ registerSketch('sk15', function (p) {
     p.strokeWeight(3);
     p.bezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2);
   }
+
+  p.windowResized = function () {
+    p.resizeCanvas(p.windowWidth, p.windowHeight);
+    centerX = p.width / 2;
+    centerY = p.height / 2;
+    radius = p.min(p.width, p.height) * 0.35;
+  };
 });
