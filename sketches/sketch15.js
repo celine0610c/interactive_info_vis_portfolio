@@ -52,7 +52,22 @@ registerSketch('sk15', function (p) {
     let typeAngles = {};
 
     function setup() {
-        createCanvas(900, 900);
+        function setup() {
+            const canvas = createCanvas(900, 900);
+            canvas.parent("sketch-container-sk15");
+
+            centerX = width / 2;
+            centerY = height / 2;
+
+            angleStep = TWO_PI / types.length;
+
+            for (let i = 0; i < types.length; i++) {
+                typeAngles[types[i]] = i * angleStep;
+            }
+
+            textFont("Arial");
+        }
+
         centerX = width / 2;
         centerY = height / 2;
 
