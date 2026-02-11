@@ -62,40 +62,74 @@ registerSketch('sk15', function (p) {
 
   // ---------------- DRAW ----------------
   p.draw = function () {
-    p.background(255);
-    hovered = null;
+  p.background(255);
+  hovered = null;
 
-    const margin = 90;
-    const plotW = p.width - margin * 2;
-    const plotH = p.height - margin * 2;
+  const margin = 90;
+  const plotW = p.width - margin * 2;
+  const plotH = p.height - margin * 2;
 
-    const xMin = 20, xMax = 255;   // HP
-    const yMin = 20, yMax = 200;   // Special Attack
+  const xMin = 20, xMax = 255;   // HP
+  const yMin = 20, yMax = 200;   // Special Attack
 
-    drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
+  drawAxes(margin, plotW, plotH, xMin, xMax, yMin, yMax);
 
-    // Draw points
-    points.forEach(pt => {
-      const x = p.map(pt.hp, xMin, xMax, margin, margin + plotW);
-      const y = p.map(pt.spAtk, yMin, yMax, margin + plotH, margin);
+  // ---------- 1) HOVER DETECTION (NO DRAWING) ----------
+  for (let pt of points) {
+    const x = p.constrain(
+      p.map(pt.hp, xMin, xMax, margin, margin + plotW),
+      margin,
+      margin + plotW
+    );
 
-      if (p.dist(p.mouseX, p.mouseY, x, y) < 7) {
-        hovered = pt;
-      }
+    const y = p.constrain(
+      p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
+      margin,
+      margin + plotH
+    );
 
+    if (p.dist(p.mouseX, p.mouseY, x, y) < 7) {
+      hovered = pt;
+      break; // IMPORTANT: stop at first match
+    }
+  }
+
+  // ---------- 2) DRAW POINTS ----------
+  points.forEach(pt => {
+    const x = p.constrain(
+      p.map(pt.hp, xMin, xMax, margin, margin + plotW),
+      margin,
+      margin + plotW
+    );
+
+    const y = p.constrain(
+      p.map(pt.spAtk, yMin, yMax, margin + plotH, margin),
+      margin,
+      margin + plotH
+    );
+
+    if (hovered === pt) {
+      p.stroke(0);
+      p.strokeWeight(1.5);
+    } else {
       p.noStroke();
-      p.fill(typeColors[pt.type] || '#999');
-      p.circle(x, y, pt.legendary ? 10 : 6);
-    });
+    }
 
-    // Title
-    p.fill(0);
-    p.textAlign(p.CENTER);
-    p.textSize(26);
-    p.text('Pokémon HP vs Special Attack', p.width / 2, 45);
+    p.fill(typeColors[pt.type] || '#999');
+    p.circle(x, y, pt.legendary ? 10 : 6);
+  });
 
-    if (hovered) drawTooltip(hovered);
-  };
+  // ---------- TITLE ----------
+  p.noStroke();
+  p.fill(0);
+  p.textAlign(p.CENTER);
+  p.textSize(26);
+  p.text('Pokemon HP vs Special Attack', p.width / 2, 45);
+
+  // ---------- TOOLTIP ----------
+  if (hovered) drawTooltip(hovered);
+};
+
 
   // ---------------- AXES ----------------
   function drawAxes(margin, w, h, xMin, xMax, yMin, yMax) {
