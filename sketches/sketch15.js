@@ -1,7 +1,6 @@
-console.log("sketch15.js loaded");
-
 registerSketch('sk15', function (p) {
 
+  // ---------------- DATA ----------------
   const types = [
     "Normal", "Fire", "Water", "Electric", "Grass", "Ice",
     "Fighting", "Poison", "Ground", "Flying",
@@ -30,6 +29,7 @@ registerSketch('sk15', function (p) {
     Fairy: "#D685AD"
   };
 
+  // Simplified dominance set (can be expanded later)
   const dominance = [
     { from: "Fire", to: "Grass" },
     { from: "Water", to: "Fire" },
@@ -43,44 +43,40 @@ registerSketch('sk15', function (p) {
     { from: "Bug", to: "Psychic" },
     { from: "Rock", to: "Flying" },
     { from: "Ghost", to: "Psychic" },
-    { from: "Dragon", to: "Dragon" },
     { from: "Dark", to: "Ghost" },
     { from: "Steel", to: "Ice" },
     { from: "Fairy", to: "Dragon" }
   ];
 
-  let centerX, centerY;
-  let radius;
+  // ---------------- LAYOUT ----------------
+  let centerX, centerY, radius;
   let angleStep;
   let typeAngles = {};
 
   // ---------------- SETUP ----------------
   p.setup = function () {
     p.createCanvas(p.windowWidth, p.windowHeight);
+    p.textFont("Arial");
 
     centerX = p.width / 2;
     centerY = p.height / 2;
-    radius = p.min(p.width, p.height) * 0.35;
+    radius = p.min(p.width, p.height) * 0.38;
 
     angleStep = p.TWO_PI / types.length;
-
-    for (let i = 0; i < types.length; i++) {
-      typeAngles[types[i]] = i * angleStep;
-    }
-
-    p.textFont("Arial");
+    types.forEach((t, i) => typeAngles[t] = i * angleStep);
   };
 
   // ---------------- DRAW ----------------
   p.draw = function () {
     p.background(255);
 
-    for (let d of dominance) {
-      drawChord(d.from, d.to);
-    }
+    // Draw chords first (behind)
+    dominance.forEach(d => drawChord(d.from, d.to));
 
+    // Draw outer arcs + labels
     drawOuterRing();
 
+    // Title
     p.fill(0);
     p.noStroke();
     p.textAlign(p.CENTER);
@@ -89,55 +85,61 @@ registerSketch('sk15', function (p) {
   };
 
   // ---------------- HELPERS ----------------
+
   function drawOuterRing() {
     p.strokeWeight(30);
     p.noFill();
 
-    for (let i = 0; i < types.length; i++) {
-      let start = i * angleStep;
-      let end = start + angleStep * 0.95;
+    types.forEach((t, i) => {
+      const start = i * angleStep;
+      const end = start + angleStep * 0.95;
 
-      p.stroke(typeColors[types[i]]);
+      p.stroke(typeColors[t]);
       p.arc(centerX, centerY, radius * 2, radius * 2, start, end);
 
-      let labelAngle = start + angleStep / 2;
-      let lx = centerX + p.cos(labelAngle) * (radius + 45);
-      let ly = centerY + p.sin(labelAngle) * (radius + 45);
+      // Labels
+      const mid = start + angleStep / 2;
+      const lx = centerX + p.cos(mid) * (radius + 45);
+      const ly = centerY + p.sin(mid) * (radius + 45);
 
       p.noStroke();
       p.fill(0);
-      p.textAlign(p.CENTER, p.CENTER);
       p.textSize(12);
-      p.text(types[i], lx, ly);
-    }
+      p.textAlign(p.CENTER, p.CENTER);
+      p.text(t, lx, ly);
+    });
   }
 
+  // 🔥 FINAL, CORRECT chord geometry
   function drawChord(from, to) {
-    let a1 = typeAngles[from];
-    let a2 = typeAngles[to];
+    const a1 = typeAngles[from];
+    const a2 = typeAngles[to];
 
-    let x1 = centerX + p.cos(a1) * radius;
-    let y1 = centerY + p.sin(a1) * radius;
+    const x1 = centerX + p.cos(a1) * radius;
+    const y1 = centerY + p.sin(a1) * radius;
 
-    let x2 = centerX + p.cos(a2) * radius;
-    let y2 = centerY + p.sin(a2) * radius;
+    const x2 = centerX + p.cos(a2) * radius;
+    const y2 = centerY + p.sin(a2) * radius;
 
-    let cx1 = centerX + p.cos(a1) * radius * 0.4;
-    let cy1 = centerY + p.sin(a1) * radius * 0.4;
-
-    let cx2 = centerX + p.cos(a2) * radius * 0.4;
-    let cy2 = centerY + p.sin(a2) * radius * 0.4;
-
+    // Control points pulled to center = real chord
     p.noFill();
-    p.stroke(typeColors[from]);
-    p.strokeWeight(3);
-    p.bezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2);
+    const c = p.color(typeColors[from]);
+    p.stroke(p.red(c), p.green(c), p.blue(c), 120);
+    p.strokeWeight(2);
+
+    p.bezier(
+      x1, y1,
+      centerX, centerY,
+      centerX, centerY,
+      x2, y2
+    );
   }
 
+  // ---------------- RESIZE ----------------
   p.windowResized = function () {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
     centerX = p.width / 2;
     centerY = p.height / 2;
-    radius = p.min(p.width, p.height) * 0.35;
+    radius = p.min(p.width, p.height) * 0.38;
   };
 });
