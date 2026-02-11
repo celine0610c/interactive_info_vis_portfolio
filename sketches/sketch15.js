@@ -1,4 +1,4 @@
-console.log("sk15 loaded");
+console.log("sketch15.js loaded");
 
 registerSketch('sk15', function (p) {
 
